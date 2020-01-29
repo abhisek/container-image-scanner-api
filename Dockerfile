@@ -15,4 +15,4 @@ EXPOSE 3000
 # Remove entrypoint from parent image
 ENTRYPOINT []
 
-CMD ["./cis-api-server"]
+CMD ["./api-server"]
