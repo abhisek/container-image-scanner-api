@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"sync"
+
+	"github.com/google/uuid"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -26,9 +27,24 @@ type ScanReport struct {
 	TrivyScanReport trivy.ScanReport `json:"report"`
 }
 
+// Hash index is not addressable in Go so we use flat key-value pairing
 type ScanningService struct {
-	JobGroup sync.WaitGroup
+	statusMap      map[string]string
+	reportMap      map[string]ScanReport
+	scannerChannel chan ScanJob
 }
+
+type ScanJob struct {
+	JobID       string
+	ScanRequest ScanRequest
+}
+
+const (
+	SCAN_STATUS_NEW         = "NEW"
+	SCAN_STATUS_IN_PROGRESS = "IN-PROGRESS"
+	SCAN_STATUS_COMPLETED   = "COMPLETED"
+	SCAN_STATUS_ERROR       = "ERROR"
+)
 
 func dockerPullImage(imageRef, user, password string) error {
 	ctx := context.Background()
@@ -67,6 +83,31 @@ func dockerPullImage(imageRef, user, password string) error {
 
 func (ctx *ScanningService) Init() {
 	log.Debugf("Scanning service initialized")
+
+	ctx.scannerChannel = make(chan ScanJob, 5)
+	ctx.statusMap = make(map[string]string, 0)
+	ctx.reportMap = make(map[string]ScanReport, 0)
+
+	go func() {
+		for job := range ctx.scannerChannel {
+			ctx.processJob(job)
+		}
+	}()
+}
+
+func (ctx *ScanningService) processJob(job ScanJob) {
+	log.Debugf("Processing scan job with id: %s", job.JobID)
+
+	ctx.statusMap[job.JobID] = SCAN_STATUS_IN_PROGRESS
+	if report, err := ctx.ScanImage(job.ScanRequest); err != nil {
+		ctx.statusMap[job.JobID] = SCAN_STATUS_ERROR
+	} else {
+		ctx.reportMap[job.JobID] = report
+		ctx.statusMap[job.JobID] = SCAN_STATUS_COMPLETED
+	}
+
+	log.Debugf("Finished processing job with id: %s status: %s",
+		job.JobID, ctx.statusMap[job.JobID])
 }
 
 // This method is synchronous
@@ -89,4 +130,28 @@ func (ctx *ScanningService) ScanImage(req ScanRequest) (ScanReport, error) {
 		len(scanReport.Vulnerabilities), scanReport.Target)
 
 	return ScanReport{Version: "1", TrivyScanReport: scanReport}, nil
+}
+
+func (ctx *ScanningService) AsyncScanImage(req ScanRequest) string {
+	scanID := uuid.New().String()
+	job := ScanJob{
+		JobID:       scanID,
+		ScanRequest: req}
+
+	log.Debugf("Async submit scan for image: %s id: %s", req.ImageRef, scanID)
+
+	ctx.statusMap[job.JobID] = SCAN_STATUS_NEW
+	ctx.scannerChannel <- job
+
+	return scanID
+}
+
+func (ctx *ScanningService) GetScanStatus(scanID string) string {
+	status, found := ctx.statusMap[scanID]
+
+	if found {
+		return status
+	}
+
+	return SCAN_STATUS_ERROR
 }

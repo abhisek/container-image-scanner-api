@@ -2,3 +2,6 @@ Container Image Scanner API:
   ✔ Integrate trivy as library and do test scan @done(20-01-27 23:05)
   ☐ Defined API as OpenAPI YAML
   ☐ Define data structure for API request / response
+  ✔ Added CORS @done(20-01-29 11:58)
+  ☐ Implement async scanning with in-memory data structure
+  ☐ Implement async scanning with persistence (Database/Redis)
