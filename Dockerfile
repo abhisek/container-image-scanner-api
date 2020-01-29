@@ -10,7 +10,7 @@ COPY --from=0 /app/api-server .
 # Build vulnerabilty cache
 RUN trivy --download-db-only
 
-EXPOSE 3000
+EXPOSE 8000
 
 # Remove entrypoint from parent image
 ENTRYPOINT []
