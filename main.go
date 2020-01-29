@@ -72,7 +72,23 @@ func scanSubmissionHandler(w http.ResponseWriter, r *http.Request) {
 
 func scanStatusHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
+	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": scanningService.GetScanStatus(params["scan_id"])})
+}
+
+func scanReportHandler(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	report, err := scanningService.GetScanReport(params["scan_id"])
+
+	w.Header().Add("Content-Type", "application/json")
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to get scan report"})
+	} else {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(report)
+	}
 }
 
 func corsMiddleware(r *mux.Router) mux.MiddlewareFunc {
@@ -93,7 +109,7 @@ func main() {
 	r.HandleFunc("/", indexHandler)
 	r.HandleFunc("/version", versionHandler).Methods("GET")
 	r.HandleFunc("/scans/{scan_id}/status", scanStatusHandler).Methods("GET")
-	r.HandleFunc("/scans/{scan_id}", default404Handler).Methods("GET")
+	r.HandleFunc("/scans/{scan_id}", scanReportHandler).Methods("GET")
 	r.HandleFunc("/scans", scanSubmissionHandler).Methods("POST")
 	r.Use(corsMiddleware(r))
 

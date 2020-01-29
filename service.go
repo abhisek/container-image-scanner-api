@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 
 	"github.com/google/uuid"
 
@@ -154,4 +155,14 @@ func (ctx *ScanningService) GetScanStatus(scanID string) string {
 	}
 
 	return SCAN_STATUS_ERROR
+}
+
+func (ctx *ScanningService) GetScanReport(scanID string) (ScanReport, error) {
+	report, found := ctx.reportMap[scanID]
+
+	if !found {
+		return ScanReport{}, errors.New("Invalid scanID")
+	}
+
+	return report, nil
 }
