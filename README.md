@@ -56,7 +56,7 @@ In memory data structure with [go-routine](https://tour.golang.org/concurrency/1
 
 ## Proposed Architecture
 
-![](docs/diagram.svg)
+![](docs/diagram.png)
 
 > The current version do not use persistence
 
