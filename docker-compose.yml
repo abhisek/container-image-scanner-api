@@ -1,0 +1,17 @@
+version: '3'
+services:
+  apisvr:
+    build: .
+    command: "./cis-api-server"
+    volumes:
+      - .:/app
+      - common:/var/run
+    ports:
+      - "8000:8000"
+  docker:
+    image: docker:dind
+    privileged: true
+    volumes:
+      - common:/var/run
+volumes:
+  common:
