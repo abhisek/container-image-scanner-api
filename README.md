@@ -1,2 +1,55 @@
 # Container Image Scanner API
 A minimalist Go API to scan Docker images for security vulnerabilities and weaknesses
+
+## TL;DR
+
+Requirements:
+
+* Docker
+* Docker Compose
+
+Clone this repository
+
+```
+git clone https://github.com/abhisek/container-image-scanner-api && \
+  cd container-image-scanner-api
+```
+
+Start services
+
+```
+docker-compose up
+```
+
+Submit scan:
+
+```
+curl -d '{"image": "ubuntu"}' http://localhost:8000/scans
+```
+
+Get scan status
+
+```
+curl http://localhost:8000/scans/:scan_id/status
+```
+
+Get scan report
+
+```
+curl http://localhost:8000/scans/:scan_id
+```
+
+## Docker in Docker
+
+The application uses `docker:dind` (Docker in Docker) for pulling image and scanning with external tools (currently only [Trivy](https://github.com/aquasecurity/trivy)).
+
+## Current Architecture
+
+In memory data structure with [go-routine](https://tour.golang.org/concurrency/1) based asynchronous tasks. Check [service.go](https://github.com/abhisek/container-image-scanner-api/blob/master/service.go) for more details.
+
+## Proposed Architecture
+
+![](docs/diagram.svg)
+
+> The current version do not use persistence
+
