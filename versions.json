@@ -1,3 +1,4 @@
 {
-  "trivy": "TBD"
+  "api_latest_version": "1",
+  "trivy": "latest"
 }

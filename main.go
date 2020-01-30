@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -42,7 +43,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func versionHandler(w http.ResponseWriter, r *http.Request) {
-	content, err := ioutil.ReadFile("versions.json")
+	path, _ := filepath.Abs("./versions.json")
+	content, err := ioutil.ReadFile(path)
 	if err == nil {
 		w.Write(content)
 	} else {
@@ -91,6 +93,11 @@ func scanReportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func healthzHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}
+
 func corsMiddleware(r *mux.Router) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -107,6 +114,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", indexHandler)
+	r.HandleFunc("/healthz", healthzHandler)
 	r.HandleFunc("/version", versionHandler).Methods("GET")
 	r.HandleFunc("/scans/{scan_id}/status", scanStatusHandler).Methods("GET")
 	r.HandleFunc("/scans/{scan_id}", scanReportHandler).Methods("GET")

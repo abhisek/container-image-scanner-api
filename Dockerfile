@@ -5,7 +5,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o api-server
 
 FROM aquasec/trivy
 WORKDIR /app
+
 COPY --from=0 /app/api-server .
+COPY versions.json .
 
 # Build vulnerabilty cache
 RUN trivy --download-db-only
