@@ -1,4 +1,5 @@
-VERSION="0.2.0"
+VERSION=0.2.0
+RELEASE_REGISTRY=abh1sek/container-image-scannere-api
 
 all: build
 
@@ -6,9 +7,9 @@ build:
 	CGO_ENABLED=0 GOOS=linux go build -o cis-api-server
 
 release:
-	docker build -t abh1sek/container-image-scannere-api:$(VERSION) .
-	docker tag abh1sek/container-image-scannere-api:$(VERSION) abh1sek/container-image-scannere-api:latest
-	docker push abh1sek/container-image-scannere-api
+	docker build -t $(RELEASE_REGISTRY):$(VERSION) .
+	docker tag $(RELEASE_REGISTRY):$(VERSION) $(RELEASE_REGISTRY)
+	docker push $(RELEASE_REGISTRY)
 
 .PHONY: clean
 clean:

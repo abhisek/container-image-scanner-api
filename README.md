@@ -7,6 +7,7 @@ Requirements:
 
 * Docker
 * Docker Compose
+* Go 1.12+
 
 Clone this repository
 
@@ -15,11 +16,19 @@ git clone https://github.com/abhisek/container-image-scanner-api && \
   cd container-image-scanner-api
 ```
 
+Build the API server
+
+```
+make
+```
+
 Start services
 
 ```
 docker-compose up
 ```
+
+> The API server container mounts current directory for ease in development. You can re-build API server and restart the service: `docker-compose restart apisvr` without having the need to rebuild the entire API Server image.
 
 Submit scan:
 
