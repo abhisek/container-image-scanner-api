@@ -24,8 +24,9 @@ type ScanRequest struct {
 }
 
 type ScanReport struct {
-	Version         string           `json:"version"`
-	TrivyScanReport trivy.ScanReport `json:"report"`
+	Version          string               `json:"version"`
+	TrivyScanReport  trivy.ScanReport     `json:"vulnerabilities"`
+	DockleScanReport scanner.DockleReport `json:"audit"`
 }
 
 // Hash index is not addressable in Go so we use flat key-value pairing
@@ -120,17 +121,25 @@ func (ctx *ScanningService) ScanImage(req ScanRequest) (ScanReport, error) {
 	}
 
 	log.Debugf("Starting Trivy scan")
-	scanReport, err := scanner.RunTrivyScan(req.ImageRef)
+	trivyScanReport, err := scanner.RunTrivyScan(req.ImageRef)
 
 	if err != nil {
 		log.Errorf("Failed to execute trivy scan: %#v", err)
-		return ScanReport{}, err
 	}
 
 	log.Debugf("Completed trivy scan, found %d vulnerabilites on: %s",
-		len(scanReport.Vulnerabilities), scanReport.Target)
+		len(trivyScanReport.Vulnerabilities), trivyScanReport.Target)
 
-	return ScanReport{Version: "1", TrivyScanReport: scanReport}, nil
+	log.Debugf("Starting Dockle scan")
+	dockleScanReport, err := scanner.RunDockleScan(req.ImageRef)
+	if err != nil {
+		log.Errorf("Failed to execute dockle scan: %#v", err)
+	}
+
+	log.Debugf("Completed dockle scan, found %d issues", len(dockleScanReport.Details))
+
+	return ScanReport{Version: "1",
+		TrivyScanReport: trivyScanReport, DockleScanReport: dockleScanReport}, nil
 }
 
 func (ctx *ScanningService) AsyncScanImage(req ScanRequest) string {

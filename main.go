@@ -124,5 +124,9 @@ func main() {
 	loggingRouter := handlers.LoggingHandler(os.Stdout, r)
 
 	log.Infof("Starting HTTP server on %s", getListenerString())
-	http.ListenAndServe(getListenerString(), loggingRouter)
+	err := http.ListenAndServe(getListenerString(), loggingRouter)
+
+	if err != nil {
+		log.Errorf("Failed to listen to local address, error; %#v", err)
+	}
 }

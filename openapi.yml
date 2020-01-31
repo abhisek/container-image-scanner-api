@@ -81,7 +81,9 @@ definitions:
     properties:
       id:
         type: "string"
-      report:
+      vulnerabilities:
+        type: object
+      audit:
         type: object
   ScanStatus:
     type: "object"
