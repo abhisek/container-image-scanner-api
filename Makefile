@@ -1,4 +1,4 @@
-VERSION=0.2.0
+VERSION=0.3.0
 RELEASE_REGISTRY=abh1sek/container-image-scannere-api
 
 all: build
