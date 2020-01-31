@@ -5,3 +5,5 @@ Container Image Scanner API:
   ✔ Added CORS @done(20-01-29 11:58)
   ✔ Implement async scanning with in-memory data structure @done(20-01-29 15:45)
   ☐ Implement async scanning with persistence (Database/Redis)
+  ☐ Integrate dockle for CIS benchmark on docker images
+  ☐ Serve Swagger docs (HTML) from /
