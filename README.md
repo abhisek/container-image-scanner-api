@@ -50,6 +50,16 @@ Get scan report
 curl http://localhost:8000/scans/:scan_id
 ```
 
+**Note:** Scan reports are stored in `Redis` server with expiration set to `15 minutes`. To change time window or disable report expiration set the following environment variable
+
+```
+# Disable report expiration in Redis
+export REPORT_EXPIRATION_WINDOW=0
+
+# Set report expiration window to 30 minutes
+export REPORT_EXPIRATION_WINDOW=1800
+```
+
 ## Docker in Docker
 
 The application uses `docker:dind` (Docker in Docker) for pulling image and scanning with external tools (currently only [Trivy](https://github.com/aquasecurity/trivy) and [Dockle](https://github.com/goodwithtech/dockle)). This model is to ensure we can run this safely in [Kubernetes](https://kubernetes.io/) and avoid any dependency or clutter in host system.

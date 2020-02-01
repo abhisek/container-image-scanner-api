@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-redis/redis/v7"
@@ -14,7 +15,7 @@ type Persistence struct {
 	redis *redis.Client
 }
 
-var DEFAULT_EXPIRATION time.Duration = 15 * time.Minute
+var REPORT_EXPIRATION_WINDOW time.Duration = 15 * time.Minute
 
 func (client *Persistence) Init() {
 	log.Debugf("Initializing Redis client")
@@ -27,6 +28,13 @@ func (client *Persistence) Init() {
 	pong, err := client.redis.Ping().Result()
 	if err != nil {
 		panic(err)
+	}
+
+	if val := os.Getenv("REPORT_EXPIRATION_WINDOW"); len(val) > 0 {
+		if valN, err := strconv.Atoi(val); err != nil {
+			log.Debugf("Setting REPORT_EXPIRATION_WINDOW: %d", valN)
+			REPORT_EXPIRATION_WINDOW = time.Duration(valN) * time.Second
+		}
 	}
 
 	log.Debugf("Redis client initialized: %s", pong)
@@ -52,7 +60,7 @@ func (client *Persistence) SetScanReport(scanID string, report ScanReport) error
 		return err
 	}
 
-	_, err = client.redis.Set(key, data, DEFAULT_EXPIRATION).Result()
+	_, err = client.redis.Set(key, data, REPORT_EXPIRATION_WINDOW).Result()
 
 	if err != nil {
 		log.Debugf("Failed to set report map in Redis: %#v", err)
