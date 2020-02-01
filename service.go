@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 
 	"github.com/google/uuid"
 
@@ -31,10 +30,8 @@ type ScanReport struct {
 
 // Hash index is not addressable in Go so we use flat key-value pairing
 type ScanningService struct {
-	statusMap       map[string]string
-	reportMap       map[string]ScanReport
-	persistentStore RedisPersistence
-	scannerChannel  chan ScanJob
+	store          Persistence
+	scannerChannel chan ScanJob
 }
 
 type ScanJob struct {
@@ -87,11 +84,8 @@ func dockerPullImage(imageRef, user, password string) error {
 func (ctx *ScanningService) Init() {
 	log.Debugf("Initalizing Scanning Service")
 
-	ctx.persistentStore.Init()
-
+	ctx.store.Init()
 	ctx.scannerChannel = make(chan ScanJob, 5)
-	ctx.statusMap = make(map[string]string, 0)
-	ctx.reportMap = make(map[string]ScanReport, 0)
 
 	go func() {
 		for job := range ctx.scannerChannel {
@@ -105,16 +99,16 @@ func (ctx *ScanningService) Init() {
 func (ctx *ScanningService) processJob(job ScanJob) {
 	log.Debugf("Processing scan job with id: %s", job.JobID)
 
-	ctx.statusMap[job.JobID] = SCAN_STATUS_IN_PROGRESS
+	ctx.store.SetScanStatus(job.JobID, SCAN_STATUS_IN_PROGRESS)
 	if report, err := ctx.ScanImage(job.ScanRequest); err != nil {
-		ctx.statusMap[job.JobID] = SCAN_STATUS_ERROR
+		ctx.store.SetScanStatus(job.JobID, SCAN_STATUS_ERROR)
 	} else {
-		ctx.reportMap[job.JobID] = report
-		ctx.statusMap[job.JobID] = SCAN_STATUS_COMPLETED
+		ctx.store.SetScanReport(job.JobID, report)
+		ctx.store.SetScanStatus(job.JobID, SCAN_STATUS_COMPLETED)
 	}
 
 	log.Debugf("Finished processing job with id: %s status: %s",
-		job.JobID, ctx.statusMap[job.JobID])
+		job.JobID, ctx.store.GetScanStatus(job.JobID))
 }
 
 // This method is synchronous
@@ -155,28 +149,16 @@ func (ctx *ScanningService) AsyncScanImage(req ScanRequest) string {
 
 	log.Debugf("Async submit scan for image: %s id: %s", req.ImageRef, scanID)
 
-	ctx.statusMap[job.JobID] = SCAN_STATUS_NEW
+	ctx.store.SetScanStatus(job.JobID, SCAN_STATUS_NEW)
 	ctx.scannerChannel <- job
 
 	return scanID
 }
 
 func (ctx *ScanningService) GetScanStatus(scanID string) string {
-	status, found := ctx.statusMap[scanID]
-
-	if found {
-		return status
-	}
-
-	return SCAN_STATUS_ERROR
+	return ctx.store.GetScanStatus(scanID)
 }
 
 func (ctx *ScanningService) GetScanReport(scanID string) (ScanReport, error) {
-	report, found := ctx.reportMap[scanID]
-
-	if !found {
-		return ScanReport{}, errors.New("Invalid scanID")
-	}
-
-	return report, nil
+	return ctx.store.GetScanReport(scanID)
 }

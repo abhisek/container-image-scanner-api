@@ -10,13 +10,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type RedisPersistence struct {
+type Persistence struct {
 	redis *redis.Client
 }
 
 var DEFAULT_EXPIRATION time.Duration = 15 * time.Minute
 
-func (client *RedisPersistence) Init() {
+func (client *Persistence) Init() {
 	log.Debugf("Initializing Redis client")
 
 	client.redis = redis.NewClient(&redis.Options{
@@ -32,7 +32,7 @@ func (client *RedisPersistence) Init() {
 	log.Debugf("Redis client initialized: %s", pong)
 }
 
-func (client *RedisPersistence) SetScanStatus(scanID, status string) error {
+func (client *Persistence) SetScanStatus(scanID, status string) error {
 	key := fmt.Sprintf("scans:%s:status", scanID)
 	_, err := client.redis.Set(key, status, 0).Result()
 
@@ -43,7 +43,7 @@ func (client *RedisPersistence) SetScanStatus(scanID, status string) error {
 	return err
 }
 
-func (client *RedisPersistence) SetScanReport(scanID string, report ScanReport) error {
+func (client *Persistence) SetScanReport(scanID string, report ScanReport) error {
 	key := fmt.Sprintf("scans:%s:report", scanID)
 	data, err := json.Marshal(report)
 
@@ -61,10 +61,32 @@ func (client *RedisPersistence) SetScanReport(scanID string, report ScanReport) 
 	return err
 }
 
-func (client *RedisPersistence) GetScanStatus(scanID string) string {
-	return SCAN_STATUS_ERROR
+func (client *Persistence) GetScanStatus(scanID string) string {
+	key := fmt.Sprintf("scans:%s:status", scanID)
+	value, err := client.redis.Get(key).Result()
+
+	if err != nil {
+		log.Debugf("Failed to get status from Redis: %#v", err)
+		return SCAN_STATUS_ERROR
+	}
+
+	return value
 }
 
-func (client *RedisPersistence) GetScanReport(scanID string) (report ScanReport, err error) {
+func (client *Persistence) GetScanReport(scanID string) (report ScanReport, err error) {
+	key := fmt.Sprintf("scans:%s:report", scanID)
+
+	value, err := client.redis.Get(key).Result()
+
+	if err != nil {
+		log.Debugf("Failed to get report from Redis: %#v", err)
+		return report, err
+	}
+
+	err = json.Unmarshal([]byte(value), &report)
+	if err != nil {
+		log.Debugf("Failed to unmarshal report JSON from redis: %#v", err)
+	}
+
 	return report, err
 }
