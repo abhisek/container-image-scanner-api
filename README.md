@@ -65,6 +65,8 @@ Two containers are used to deliver the service:
 
 In memory data structure with [go-routine](https://tour.golang.org/concurrency/1) based asynchronous tasks. Check [service.go](https://github.com/abhisek/container-image-scanner-api/blob/master/service.go) for more details.
 
+> Redis is used for persistence with *15 minutes* expiration for reports
+
 ## Proposed Architecture
 
 ![](docs/diagram.png)

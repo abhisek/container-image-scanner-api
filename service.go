@@ -31,9 +31,10 @@ type ScanReport struct {
 
 // Hash index is not addressable in Go so we use flat key-value pairing
 type ScanningService struct {
-	statusMap      map[string]string
-	reportMap      map[string]ScanReport
-	scannerChannel chan ScanJob
+	statusMap       map[string]string
+	reportMap       map[string]ScanReport
+	persistentStore RedisPersistence
+	scannerChannel  chan ScanJob
 }
 
 type ScanJob struct {
@@ -84,7 +85,9 @@ func dockerPullImage(imageRef, user, password string) error {
 }
 
 func (ctx *ScanningService) Init() {
-	log.Debugf("Scanning service initialized")
+	log.Debugf("Initalizing Scanning Service")
+
+	ctx.persistentStore.Init()
 
 	ctx.scannerChannel = make(chan ScanJob, 5)
 	ctx.statusMap = make(map[string]string, 0)
@@ -95,6 +98,8 @@ func (ctx *ScanningService) Init() {
 			ctx.processJob(job)
 		}
 	}()
+
+	log.Debugf("Scanning service initialized")
 }
 
 func (ctx *ScanningService) processJob(job ScanJob) {

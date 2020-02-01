@@ -65,8 +65,6 @@ func scanSubmissionHandler(w http.ResponseWriter, r *http.Request) {
 	if err := decoder.Decode(&scanRequest); err != nil {
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to decode request params"})
 	} else {
-		// scanReport, _ := scanningService.ScanImage(scanRequest)
-		// json.NewEncoder(w).Encode(scanReport)
 		scanID := scanningService.AsyncScanImage(scanRequest)
 		json.NewEncoder(w).Encode(map[string]string{"scan_id": scanID})
 	}

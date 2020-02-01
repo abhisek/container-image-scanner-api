@@ -8,10 +8,17 @@ services:
       - common:/var/run
     ports:
       - "8000:8000"
+    environment: 
+      - REDIS_ENDPOINT=redis:6379
   docker:
     image: docker:dind
     privileged: true
     volumes:
       - common:/var/run
+  redis:
+    image: redis:5.0-alpine
+    volumes:
+      - redis:/data
 volumes:
   common:
+  redis:

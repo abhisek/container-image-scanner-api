@@ -7,6 +7,7 @@ require (
 	github.com/aquasecurity/trivy v0.4.3
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v0.7.3-0.20190506211059-b20a14b54661
+	github.com/go-redis/redis/v7 v7.0.0-beta.5
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/handlers v1.4.2
