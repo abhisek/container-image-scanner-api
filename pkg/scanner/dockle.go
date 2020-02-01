@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"os"
 	"os/exec"
 
 	log "github.com/sirupsen/logrus"
@@ -70,6 +71,9 @@ func RunDockleScan(imageRef string) (report DockleReport, err error) {
 	}).Debug("Running dockle finished")
 
 	report, err = parseScanReports(reportFile)
+	reportFile.Close()
+	os.Remove(reportFile.Name())
+
 	return
 }
 
