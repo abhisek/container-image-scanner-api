@@ -52,12 +52,13 @@ curl http://localhost:8000/scans/:scan_id
 
 ## Docker in Docker
 
-The application uses `docker:dind` (Docker in Docker) for pulling image and scanning with external tools (currently only [Trivy](https://github.com/aquasecurity/trivy)). This model is to ensure we can run this safely in [Kubernetes](https://kubernetes.io/) and avoid any dependency or clutter in host system.
+The application uses `docker:dind` (Docker in Docker) for pulling image and scanning with external tools (currently only [Trivy](https://github.com/aquasecurity/trivy) and [Dockle](https://github.com/goodwithtech/dockle)). This model is to ensure we can run this safely in [Kubernetes](https://kubernetes.io/) and avoid any dependency or clutter in host system.
 
-Two containers are used to deliver the service:
+Three containers are used to deliver the service:
 
 1. Docker in Docker (DIND) container
 2. API Server (This app) container
+3. Redis (For data structure persistence)
 
 `/var/run` is shared between the two containers to allow `API Server` access to `DIND` through unix socket in `/var/run/docker.sock`
 
