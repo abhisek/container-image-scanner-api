@@ -106,6 +106,14 @@ func corsMiddleware(r *mux.Router) mux.MiddlewareFunc {
 	}
 }
 
+func corsOptionHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length")
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func main() {
 	initLogger()
 	scanningService.Init()
@@ -117,6 +125,7 @@ func main() {
 	r.HandleFunc("/scans/{scan_id}/status", scanStatusHandler).Methods("GET")
 	r.HandleFunc("/scans/{scan_id}", scanReportHandler).Methods("GET")
 	r.HandleFunc("/scans", scanSubmissionHandler).Methods("POST")
+	r.Methods("OPTIONS").HandlerFunc(corsOptionHandler)
 	r.Use(corsMiddleware(r))
 
 	loggingRouter := handlers.LoggingHandler(os.Stdout, r)
