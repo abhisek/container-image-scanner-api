@@ -73,7 +73,13 @@ func scanSubmissionHandler(w http.ResponseWriter, r *http.Request) {
 func scanStatusHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": scanningService.GetScanStatus(params["scan_id"])})
+
+	status := scanningService.GetScanStatus(params["scan_id"])
+	if status == SCAN_STATUS_ERROR {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"status": status})
 }
 
 func scanReportHandler(w http.ResponseWriter, r *http.Request) {

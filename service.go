@@ -4,6 +4,11 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"io"
+	"math/rand"
+	"os"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -46,6 +51,8 @@ const (
 	SCAN_STATUS_ERROR       = "ERROR"
 )
 
+var ConfigScanChannelBufferSize = 100
+
 func dockerPullImage(imageRef, user, password string) error {
 	ctx := context.Background()
 
@@ -70,22 +77,47 @@ func dockerPullImage(imageRef, user, password string) error {
 	}
 
 	out, err := cli.ImagePull(ctx, imageRef, imagePullOptions)
+	defer out.Close()
+
 	if err != nil {
 		log.Errorf("Failed to pull docker image: %#v", err)
 		return err
 	}
 
-	log.Debugf("Successfully pulled docker image from: %s", imageRef)
+	log.Debugf("Successfully queue pull request for %s to docker daemon", imageRef)
+	log.Debugf("Waiting for image pull to finish")
 
-	out.Close()
-	return nil
+	// We must wait for pull to complete else docker daemon halts pull
+	devNull, _ := os.OpenFile(os.DevNull, os.O_RDWR, 0755)
+	io.Copy(devNull, out)
+
+	return err
+}
+
+func dockerReTagImage(sourceImage string) (destImage string, err error) {
+	ctx := context.Background()
+
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		log.Errorf("Failed to create docker client: %#v", err)
+		return
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	destImage = fmt.Sprintf("re-tagged-image-%d:1", rand.Int63())
+
+	if err = cli.ImageTag(ctx, sourceImage, destImage); err != nil {
+		log.Errorf("Failed to re-tag docker image: %#v", err)
+	}
+
+	return
 }
 
 func (ctx *ScanningService) Init() {
 	log.Debugf("Initalizing Scanning Service")
 
 	ctx.store.Init()
-	ctx.scannerChannel = make(chan ScanJob, 5)
+	ctx.scannerChannel = make(chan ScanJob, ConfigScanChannelBufferSize)
 
 	go func() {
 		for job := range ctx.scannerChannel {
@@ -119,8 +151,16 @@ func (ctx *ScanningService) ScanImage(req ScanRequest) (ScanReport, error) {
 		return ScanReport{}, err
 	}
 
+	// This re-tagging is required to prevent some security tools to attempt
+	// to pull the image from private registry without credentials and fail
+	reTaggedImage, err := dockerReTagImage(req.ImageRef)
+	if err != nil {
+		log.Errorf("Failed to re-tag image, scan may fail for private repositories")
+		reTaggedImage = req.ImageRef
+	}
+
 	log.Debugf("Starting Trivy scan")
-	trivyScanReport, err := scanner.RunTrivyScan(req.ImageRef)
+	trivyScanReport, err := scanner.RunTrivyScan(reTaggedImage)
 
 	if err != nil {
 		log.Errorf("Failed to execute trivy scan: %#v", err)
@@ -130,7 +170,7 @@ func (ctx *ScanningService) ScanImage(req ScanRequest) (ScanReport, error) {
 		len(trivyScanReport.Vulnerabilities), trivyScanReport.Target)
 
 	log.Debugf("Starting Dockle scan")
-	dockleScanReport, err := scanner.RunDockleScan(req.ImageRef)
+	dockleScanReport, err := scanner.RunDockleScan(reTaggedImage)
 	if err != nil {
 		log.Errorf("Failed to execute dockle scan: %#v", err)
 	}
