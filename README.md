@@ -1,7 +1,10 @@
 # Container Image Scanner API
 A minimalist Go API to scan Docker images for security vulnerabilities and weaknesses
 
-<img width="320" height="320"  src="https://github.com/abhisek/container-image-scanner-api/blob/master/docs/logo.png"></img>
+[![License](https://img.shields.io/github/license/abhisek/container-image-scanner-api)](https://github.com/abhisek/container-image-scanner-api/blob/master/README.md)
+[![Docker Image](https://images.microbadger.com/badges/version/abh1sek/container-image-scannere-api.svg)](https://microbadger.com/images/abh1sek/container-image-scannere-api "Get your own version badge on microbadger.com")
+
+<img width="320" height="320"  src="https://raw.githubusercontent.com/abhisek/container-image-scanner-api/master/docs/logo.png"></img>
 
 ## TL;DR
 
