@@ -84,7 +84,7 @@ func dockerPullImage(imageRef, user, password string) error {
 		return err
 	}
 
-	log.Debugf("Successfully queue pull request for %s to docker daemon", imageRef)
+	log.Debugf("Successfully queued pull request for %s to docker daemon", imageRef)
 	log.Debugf("Waiting for image pull to finish")
 
 	// We must wait for pull to complete else docker daemon halts pull
